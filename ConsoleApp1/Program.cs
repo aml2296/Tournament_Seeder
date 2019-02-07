@@ -6,33 +6,35 @@ using System.Threading.Tasks;
 
 namespace ConsoleApp1
 {
+    enum mod
+    {
+        main,
+        bracket,
+        graph,
+        data
+    }
+
     class Program
     {
         static void Main(string[] args)
         {
-            string[] inputSTRING;
-            ushort playerTotal = 5;
-
             Tournament_Seeder baseSeed = new Tournament_Seeder();
-            baseSeed.BuildTournament("test", 5);
-            string[] list = baseSeed.listOfPlayers();
-            for (int i = 0; i < playerTotal; i++)
-                Console.WriteLine(list[i]);
+            display dis = new display();
+            mod programMode = mod.main;
             do
             {
-                if (baseSeed.checkIfFull())
+                switch(programMode)
                 {
-                    Console.WriteLine("UpdateData? Hit <Enter>");
-                    if (Console.ReadKey().Key == ConsoleKey.Enter)
-                        baseSeed.updateData();
+                    case mod.main:
+                        break;
+                    case mod.bracket:
+                        break;
+                    case mod.data:
+                        break;
+                    case mod.graph:
+                        break;
                 }
-                else
-                {
-                    Console.WriteLine("Input player names!");
-                    inputSTRING = Console.ReadLine().Split();
-                    baseSeed.addTournamentPLAYER(inputSTRING);
-                }
-
+                dis.start();
             } while (Console.ReadKey().Key != ConsoleKey.X);
         }
     }
