@@ -10,7 +10,7 @@ namespace ConsoleApp1
     {
         main,
         bracket,
-        graph,
+        compare,
         data
     }
 
@@ -19,22 +19,25 @@ namespace ConsoleApp1
         static void Main(string[] args)
         {
             Tournament_Seeder baseSeed = new Tournament_Seeder();
-            display dis = new display();
+            Display dis = new Display();
             mod programMode = mod.main;
+            dis.BuildMainMenu();
             do
             {
                 switch(programMode)
                 {
                     case mod.main:
+                        if (dis.getMode != mod.main)
+                            dis.BuildMainMenu();
                         break;
                     case mod.bracket:
                         break;
                     case mod.data:
                         break;
-                    case mod.graph:
+                    case mod.compare:
                         break;
                 }
-                dis.start();
+                dis.update();
             } while (Console.ReadKey().Key != ConsoleKey.X);
         }
     }
