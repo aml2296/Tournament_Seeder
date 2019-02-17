@@ -5,14 +5,14 @@ namespace ConsoleApp1
     public class Tournament_Seeder
     {
         string name;
-        database dataB;
+        public Database dataB;
         ushort tournamentSIZE = 2;
         ushort tournamentFILL = 0;
 
         public void BuildTournament(string tournamentName, ushort playerAmt)
         {
             name = tournamentName;
-            dataB = new database(playerAmt);
+            dataB = new Database(playerAmt);
             tournamentSIZE = playerAmt;
         }
         public string[] listOfPlayers()
@@ -67,7 +67,61 @@ namespace ConsoleApp1
         }
         public void updateData()
         {
-            dataB.gatherData();
+            dataB.GatherData();
         }
     }
+
+
+    public class Iterator
+    {
+        public int minValue,
+            maxValue,
+            it;
+        public Iterator(int min, int max)
+        {
+            minValue = new int();
+            maxValue = new int();
+            it = new int();
+
+            minValue = it = min;
+            maxValue = max;
+
+            maxValue = max;
+        }
+        public Iterator(int count)
+        {
+            minValue = new int();
+            maxValue = new int();
+            it = new int();
+
+            minValue = 0;
+            it = 0;
+            maxValue = count - 1;
+        }
+        public static Iterator operator ++(Iterator a)
+        {
+            if (a.it == a.maxValue)
+                a.it = a.minValue;
+            else
+                a.it++;
+            return a;
+        }
+        public static Iterator operator --(Iterator a)
+        {
+            if (a.it == a.minValue)
+                a.it = a.maxValue;
+            else
+                a.it--;
+            return a;
+        }
+        public int First()
+        {    
+            return it = minValue;
+        }
+        public int Last()
+        {
+            return it = maxValue;
+        }
+    }  //Returns an int for position between "minValue" and "maxValue" 
+
 }
