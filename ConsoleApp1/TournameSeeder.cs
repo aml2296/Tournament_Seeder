@@ -19,7 +19,7 @@ namespace ConsoleApp1
         {
             if (dataB != null)
             {
-                dataB.Position = 0;
+                //dataB.Position = 0;
                 string[] returnStr = new string[dataB.player.Length];
                 for (int i = 0; i < dataB.player.Length; i++)
                     returnStr[i] = dataB.player[i];

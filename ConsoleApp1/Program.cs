@@ -20,18 +20,45 @@ namespace ConsoleApp1
         static void Main(string[] args)
         {
             Tournament_Seeder host = new Tournament_Seeder();
-            string[] players = new string[5] { "Terry", "Jim", "Frank", "Rose", "Amy" };
+            string[] players = new string[4] { "Terry", "Amy" , "Jerry" ,"Carlos" };
+            Datablock[] arrayOfData = new Datablock[players.Length];
+            int count = 0;
+            foreach(string player in players)
+            {
+                arrayOfData[count++] = new Datablock(player,(ushort)count,(ushort)count);
+            }
             Display dis = new Display();
+            ConsoleKey myKey;
+            byte[] byteArrayFromDatablock = new byte[50];
+
+            DatablockHOST hostData = new DatablockHOST("Host",arrayOfData);
 
             do
             {
-                host.BuildTournament("tournament 1", 5);
-                host.addTournamentPLAYER(players);
-
-                byte[] temp = host.dataB.data[0].toByte;
-                for(int i = 0; i < temp.Length; i++)
-                    Console.WriteLine(temp[i]);
-            }while (Console.ReadKey().Key != ConsoleKey.X);
+                myKey = Console.ReadKey().Key;
+                switch(myKey)
+                {
+                case ConsoleKey.Enter:
+                    count = 0;
+                    Console.WriteLine("Converting to Byte");
+                    byteArrayFromDatablock = hostData.ConvertHostToByte();
+                    foreach(byte b in byteArrayFromDatablock)
+                    {
+                        Console.Write(b + "/");
+                        count++;
+                        if(count%4 == 0)
+                            Console.Write("\n");
+                    }
+                    break;
+                case ConsoleKey.Backspace:
+                    Console.WriteLine("Converting to Data");
+                    DatablockHOST test = new DatablockHOST(byteArrayFromDatablock,0);
+                    break;  
+                default:
+                    break;
+                }
+                Console.WriteLine("----");
+            }while (myKey != ConsoleKey.Escape);
         }
     }
 }
