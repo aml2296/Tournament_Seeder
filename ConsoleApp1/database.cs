@@ -1,28 +1,37 @@
 ﻿using System;
 using System.IO;
+using System.Security.AccessControl;
 using System.Runtime.Serialization.Formatters.Binary;
 
-namespace ConsoleApp1
+namespace TObase
 {
     public class Database
     {
+        //Sort datahosts alphabetically, List of starting letters within data
         Iterator it;
+        FileStream stream;
+        const int dataBufferExtension = 10;
         
         public string[] player;
         public DatablockHOST[] data;
 
-        string baseFolderName = @"c:\";
-        string path;
+        const string baseFolderName = "TO";
+        const string subFolderName = "data";
+        const string dataFile = "data.txt";
+        public string path;
 
-        public Database(int size)
+        public Database(int dataBuffer)
         {
-            it = new Iterator(size);
-            player = new string[size];
-            for (int i = 0; i < size; i++)
+            if(dataBuffer > 0)
+            {
+                it = new Iterator(dataBuffer);
+                player = new string[dataBuffer];
+                for (int i = 0; i < dataBuffer; i++)
                 player[i] = "OPEN_SLOT";
-            data = new DatablockHOST[size];
-            path = Path.Combine(baseFolderName, "data");
-            if(!CheckForFolder())
+                data = new DatablockHOST[dataBuffer];
+            }
+            path = Path.Combine("C:/Users/Aaron/Source/Repos/aml2296/Tournament_Seeder",baseFolderName);
+            if(CheckForData())
             {
 
             }
@@ -61,14 +70,22 @@ namespace ConsoleApp1
             }
         }
 
-        private bool CheckForFolder()
+        public bool CheckForData()
         {
+            string filePath = Path.Combine(path, subFolderName);
             if (!File.Exists(path))
             {
-                Directory.CreateDirectory(path);
-                if (!File.Exists(path))
+                DirectorySecurity securityRules = new DirectorySecurity();
+                securityRules.AddAccessRule(new FileSystemAccessRule("Users", FileSystemRights.FullControl, AccessControlType.Allow));
+
+                DirectoryInfo di = Directory.CreateDirectory(filePath, securityRules);
+               
+                filePath = Path.Combine(filePath,dataFile);
+                if (!File.Exists(filePath))
                 {
-                    Console.WriteLine("ERROR: " + "DATABASE" + "|" + "FOLDER CREATION");
+                    Console.WriteLine("No Data.txt Found, Generating Blank");
+                    Console.WriteLine();
+                    File.Create(filePath);   
                     return false;
                 }
             }
@@ -83,47 +100,176 @@ namespace ConsoleApp1
             }
             return false;
         }
-        public void GatherData()
+        
+
+        public bool writeToFolder(byte[] byteArray, string folderPath, int offset)
         {
-            if (CheckForFolder())
+            try
             {
-                string fileName = "source.txt";
-                path = System.IO.Path.Combine(path, fileName);
-                if (!System.IO.File.Exists(path))
+                string filePath = Path.Combine(this.path,subFolderName,dataFile);
+                using(var f = new FileStream(filePath,FileMode.Open,FileAccess.Write))
                 {
-                    using (System.IO.FileStream fs = System.IO.File.Create(path))
+                    foreach(byte b in byteArray)
+                        f.WriteByte(b);
+                    f.Close();
+                    return true;
+                }
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine("Write to folder caught an Excetion: {0}", ex);
+                return false;
+            }
+        }
+        public void ReadFiles()
+        {               
+             byte[] byteArray;
+             uint offset = 0;
+             string filePath = Path.Combine(this.path,subFolderName,dataFile);
+             using(var r = new FileStream(filePath,FileMode.Open,FileAccess.Read))
+             {
+                  byteArray = File.ReadAllBytes(filePath);
+             }
+
+             uint sizeOfData = (uint)BitConverter.ToUInt32(byteArray,(int)offset);
+             offset += sizeof(uint);
+
+             short count = 0;
+             do
+             {
+                 uint sizeOf = (uint)BitConverter.ToUInt32(byteArray,(int)offset);
+                 offset += sizeOf;
+                 count++;
+              }while(offset < sizeOfData - 1);
+             
+            data = new DatablockHOST[count];
+            offset = sizeof(uint);
+            for(int i = 0;i < count;i++)
+            {
+                data[i] = new DatablockHOST(byteArray, offset);
+                offset += data[i].SizeOf;
+            }
+        }
+        public void AddDataBlockHost(string name)
+        {
+            if(data != null)
+            {
+                DatablockHOST[] newData = data;
+                data = new DatablockHOST[newData.Length + 1];
+                for (int i = 0; i < data.Length; i++)
+                {
+                    if(i < newData.Length)
                     {
-                        int offset = 0;
-                        for (int i = 0; i < data.Length; i++)
-                        {
-                            //byte[] dataByte = data[i].toByte();
-                            //byteOffsets[i] = dataByte.Length;
-                            //offset += dataByte.Length;
-                            //fs.Write(dataByte, offset, dataByte.Length);
-                        }
+                         data[i] = newData[i];
+                    }
+                    else
+                    {
+                        data[i] = new DatablockHOST(name);
                     }
                 }
-                else
+            }
+            else
+            {
+                data = new DatablockHOST[1];
+                data[0] = new DatablockHOST(name);
+            }
+        }
+        public void AddDataBlockHost(string name, params Datablock[] datablocks)
+        {
+            if(data != null)
+            {
+                it.First();
+                if(data[0] != null)
                 {
+                    do
+                    {
+                        Next();
+                    }while(data[it.it] != null || it.it != it.minValue);
+                    if(it.it == it.minValue)
+                    {
+                        it.maxValue += 1;
+                        it.Last();
+                        DatablockHOST[] temp = data;
+                        data = new DatablockHOST[temp.Length + 10];
+                    }
+                }
+                data[it.it] = new DatablockHOST(name,datablocks);
+            }
+        }
+        public void AddDataBlockHosts(string name, params DatablockHOST[] hosts)
+        {
+            if(data != null)
+            {
+                int count = 0;
+                it.it = it.minValue;
+                do
+                {
+                    if(data[it.it] == null)
+                        data[it.it] = new DatablockHOST(hosts[count++]);
+                    Next();
+                }while(it.it != it.minValue);
 
+                if(count < hosts.Length - 1)
+                {
+                    int hostsLeftToAdd = hosts.Length - count;
+                    DatablockHOST[] temp = data;
+                    data = new DatablockHOST[temp.Length + hosts.Length - (count + 1)];
+                    for(int i =0; i < temp.Length + hostsLeftToAdd; i++)
+                    {
+                        if(i < temp.Length)
+                            data[i] = temp[i];
+                        else
+                            data[i] = new DatablockHOST(hosts[count++]);
+                    }
+                }
+            }
+            else
+            {
+                data = new DatablockHOST[hosts.Length + dataBufferExtension];
+                for(int i = 0; i < data.Length; i++)
+                {
+                    if(i < hosts.Length)
+                        data[i] = new DatablockHOST(hosts[i]);
+                    else
+                        data[i] = null;
                 }
             }
         }
-
-        public void AddDataBlockHost()
+        public byte[] ConvertDataToByte()
         {
-            DatablockHOST[] newData = new DatablockHOST[data.Length + 1];
-            for (int i = 0; i < data.Length; i++)
-                newData[i] = data[i];
-            newData[newData.Length - 1] = new DatablockHOST("");
+            uint sizeOfData = 0;
+            uint offset = 0;
+            foreach(DatablockHOST host in data)
+            {
+                if(host != null)
+                    sizeOfData += host.SizeOf;
+            }
+            byte[] returnValue = new byte[sizeOfData + sizeof(uint)];
+
+            byte[] sizeBytes = BitConverter.GetBytes(sizeOfData);
+            foreach(byte b in sizeBytes)
+            {
+                returnValue[offset++] = b;
+            }
+
+            foreach(DatablockHOST host in data)
+            {
+                if(host != null)
+                {
+                    byte[] byteArray = host.ConvertHostToByte();
+                    for(int i = 0; i < host.SizeOf; i++)
+                        returnValue[offset + i] = byteArray[i];
+                    offset += host.SizeOf;
+                }
+            }
+            return returnValue;
         }
-
-
     }
-        public class DatablockHOST : Datablock  
+    public class DatablockHOST: Datablock  
         {
-            private ushort datablockAMT = new ushort();
-            private Datablock[] otherPlayersDatablocks;
+            private ushort datablockAMT;
+            protected ushort tier = new ushort();
+            public Datablock[] otherPlayersDatablocks;
 
             public DatablockHOST(string name)
             {
@@ -135,6 +281,18 @@ namespace ConsoleApp1
                 sizeOf += sizeof(ushort);
                 sizeOf += sizeof(char)*(UInt32)SIZE_OF_NAME*(UInt32)increasedStringValue;
                 sizeOf += otherPlayersDatablocks[0].SizeOf;
+            }
+            public DatablockHOST(DatablockHOST host)
+            {
+                nameOfPlayer = host.nameOfPlayer;
+                sizeOf = host.SizeOf;
+                if(nameOfPlayer.Length > SIZE_OF_NAME)
+                    increasedStringValue = (ushort)((nameOfPlayer.Length / (int)SIZE_OF_NAME) + 1);
+                else
+                    increasedStringValue = 1;
+
+                otherPlayersDatablocks = host.otherPlayersDatablocks;
+                datablockAMT = (ushort)otherPlayersDatablocks.Length;
             }
             public DatablockHOST(string name, params Datablock[] playersToAdd)
             {
@@ -157,21 +315,21 @@ namespace ConsoleApp1
                 sizeOf += sizeof(ushort);
                 sizeOf += sizeof(char)*(UInt32)SIZE_OF_NAME*(UInt32)increasedStringValue;
             }
-            public DatablockHOST(byte[] byteArray, int offset)
+            public DatablockHOST(byte[] byteArray, uint offset)
             {
-                sizeOf = BitConverter.ToUInt32(byteArray,offset);
+                sizeOf = (uint)BitConverter.ToUInt32(byteArray,(int)offset);
                 offset += sizeof(UInt32);
 
-                increasedStringValue = (ushort)BitConverter.ToInt16(byteArray,offset);
+                increasedStringValue = (ushort)BitConverter.ToInt16(byteArray,(int)offset);
                 offset += sizeof(ushort);
             
-                datablockAMT = (ushort)BitConverter.ToUInt16(byteArray,offset);
+                datablockAMT = (ushort)BitConverter.ToUInt16(byteArray,(int)offset);
                 offset += sizeof(ushort);
 
                 char[] nameCharArray = new char[increasedStringValue*SIZE_OF_NAME];
                 for(int i = 0; i < increasedStringValue*SIZE_OF_NAME;i++)
                 {
-                    nameCharArray[i] = BitConverter.ToChar(byteArray,offset);
+                    nameCharArray[i] = BitConverter.ToChar(byteArray,(int)offset);
                     offset += sizeof(char);
                 }
                 nameOfPlayer = new string(nameCharArray);
@@ -181,8 +339,8 @@ namespace ConsoleApp1
                 otherPlayersDatablocks = new Datablock[datablockAMT];
                 for(int i =0; i < datablockAMT; i++)
                 {
-                    otherPlayersDatablocks[i] = new Datablock(byteArray, offset);
-                    offset += (int)otherPlayersDatablocks[i].SizeOf;
+                    otherPlayersDatablocks[i] = new Datablock(byteArray, (int)offset);
+                    offset += otherPlayersDatablocks[i].SizeOf;
                 }
             }
 
@@ -258,7 +416,7 @@ namespace ConsoleApp1
                 return returnValue;
             }
         }
-        public class Datablock
+    public class Datablock
         {
             protected UInt32 sizeOf = new UInt32();
             public string nameOfPlayer;

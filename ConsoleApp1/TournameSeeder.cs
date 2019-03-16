@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 
-namespace ConsoleApp1
+
+namespace TObase
 {
     public class Tournament_Seeder
     {
@@ -67,7 +69,7 @@ namespace ConsoleApp1
         }
         public void updateData()
         {
-            dataB.GatherData();
+            
         }
     }
 
