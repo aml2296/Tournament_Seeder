@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using AML;
 
 namespace TObase
 {
     public class Tournament_Seeder
     {
         string name;
+        CharList charList;
         public Database dataB;
         ushort tournamentSIZE = 2;
         ushort tournamentFILL = 0;
@@ -17,7 +18,7 @@ namespace TObase
             dataB = new Database(playerAmt);
             tournamentSIZE = playerAmt;
         }
-        public string[] listOfPlayers()
+        private string[] ListOfPlayers()
         {
             if (dataB != null)
             {
@@ -31,8 +32,9 @@ namespace TObase
                 Console.WriteLine("ERROR: " + "Tournament_Seeder" + "|" + "NO DATAB");
             return null;
         }
-        // Returns array of player names
-        public bool addTournamentPLAYER(params string[] names)
+        public bool AddTournamentPLAYER(params string[] names)//Returns True on successful addition of all players
+        //  False on running out of room for all of names[]
+        //  and on a null dataB
         {
             if (dataB != null)
             {
@@ -57,19 +59,31 @@ namespace TObase
                 Console.WriteLine("ERROR: " + "Tournament_Seeder" + "|" + "NO DATAB");
             return false;
         }
-        //Returns True on successful addition of all players
-        //  False on running out of room for all of names[]
-        //  and on a null dataB
-        public bool checkIfFull()
+        public bool CheckIfFull()
         {
             if (tournamentFILL < tournamentSIZE)
                 return false;
             else
                 return true;
         }
-        public void updateData()
+        public void UpdateData()
         {
             
+        }
+
+
+        private Datablock CheckInLibrary(string name)
+        {
+           
+            return null;
+        }
+        public bool LoadLibrary()
+        {
+            return dataB.ReadCharLToFile(ref charList);
+        }
+        public bool SaveLibrary()
+        {
+            return dataB.WriteCharLToFile(charList);
         }
     }
 
